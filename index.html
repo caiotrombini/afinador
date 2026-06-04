@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Caio Trombini Afinador PRO v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#060709;
+  --panel:#0d1117;
+  --panel2:#111827;
+  --border:#1f2937;
+  --border2:#374151;
+  --cyan:#00f0ff;
+  --green:#00ff66;
+  --red:#ff3333;
+  --yellow:#ffcc00;
+  --white:#e2e8f0;
+  --muted:#4b5563;
+  --font-main:'Chakra Petch',sans-serif;
+  --font-display:'Orbitron',sans-serif;
+  --glow-cyan:0 0 10px #00f0ff,0 0 30px rgba(0,240,255,0.3);
+  --glow-green:0 0 10px #00ff66,0 0 30px rgba(0,255,102,0.3);
+  --glow-red:0 0 10px #ff3333,0 0 30px rgba(255,51,51,0.3);
+}
+body{background:var(--bg);color:var(--white);font-family:var(--font-main);min-height:100vh;overflow-x:hidden;background-image:radial-gradient(ellipse at top,rgba(0,240,255,0.03) 0%,transparent 60%)}
+.shell{max-width:480px;margin:0 auto;padding:12px;min-height:100vh;position:relative}
+.shell::before,.shell::after{content:'';position:absolute;width:8px;height:8px;background:var(--border2);border-radius:50%;box-shadow:0 0 6px rgba(0,240,255,0.2)}
+.shell::before{top:20px;left:20px}
+.shell::after{top:20px;right:20px}
+
+/* HEADER */
+.hero{text-align:center;padding:20px 0 16px;position:relative}
+.hero::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.3}
+.badge{display:inline-block;font-size:9px;font-family:var(--font-display);letter-spacing:3px;color:var(--cyan);border:1px solid rgba(0,240,255,0.3);padding:3px 10px;border-radius:2px;margin-bottom:8px;text-transform:uppercase;text-shadow:var(--glow-cyan)}
+.logo{font-family:var(--font-display);font-size:22px;font-weight:900;letter-spacing:2px;color:var(--white);text-transform:uppercase;line-height:1.1}
+.logo span{color:var(--cyan);text-shadow:var(--glow-cyan)}
+.tagline{font-size:9px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-top:6px}
+
+/* MODULES */
+.module{background:linear-gradient(145deg,var(--panel),#0a0e14);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden}
+.module::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,240,255,0.15),transparent)}
+.module-label{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.module-label::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:var(--glow-cyan);flex-shrink:0}
+
+/* CALIBRATION */
+.cal-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cal-label{font-size:11px;color:var(--muted);letter-spacing:1px}
+.cal-ctrl{display:flex;align-items:center;gap:6px}
+.cal-ctrl button{background:#0a0e14;border:1px solid var(--border2);color:var(--cyan);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;transition:all .15s;display:flex;align-items:center;justify-content:center;font-family:var(--font-display)}
+.cal-ctrl button:hover{border-color:var(--cyan);box-shadow:var(--glow-cyan);background:rgba(0,240,255,0.05)}
+.cal-val{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--cyan);text-shadow:var(--glow-cyan);min-width:48px;text-align:center}
+.cal-unit{font-size:10px;color:var(--muted)}
+
+/* INSTRUMENT TABS */
+.tabs{display:flex;gap:6px}
+.tab{flex:1;background:#0a0e14;border:1px solid var(--border);color:var(--muted);padding:10px;border-radius:6px;cursor:pointer;font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;text-align:center}
+.tab.active{background:rgba(0,240,255,0.08);border-color:var(--cyan);color:var(--cyan);box-shadow:var(--glow-cyan),inset 0 0 10px rgba(0,240,255,0.05)}
+.tab:hover:not(.active){border-color:var(--border2);color:var(--white)}
+
+/* MIC SELECT */
+.sel-wrap{position:relative}
+.sel-wrap::after{content:'▼';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--cyan);font-size:8px;pointer-events:none}
+select{width:100%;background:#0a0e14;border:1px solid var(--border);color:var(--white);padding:11px 32px 11px 12px;border-radius:6px;font-family:var(--font-display);font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer;appearance:none;transition:all .2s;text-transform:uppercase}
+select:focus{outline:none;border-color:var(--cyan);box-shadow:var(--glow-cyan)}
+option{background:#0d1117;color:var(--white)}
+
+/* LED STATUS */
+.mic-status{display:flex;align-items:center;gap:8px;margin-top:8px}
+.led{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:all .3s;flex-shrink:0}
+.led.active{background:var(--green);box-shadow:var(--glow-green);animation:pulse 1.5s ease-in-out infinite}
+.led.error{background:var(--red);box-shadow:var(--glow-red)}
+.mic-status-text{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(0.85)}}
+
+/* MAIN DISPLAY */
+.display-module{background:linear-gradient(145deg,#050709,#080c10);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px}
+.note-display{text-align:center;padding:10px 0 6px}
+.note-name{font-family:var(--font-display);font-size:72px;font-weight:900;color:var(--white);line-height:1;transition:color .3s,text-shadow .3s;text-shadow:0 0 30px rgba(255,255,255,0.1)}
+.note-name.in-tune{color:var(--green);text-shadow:var(--glow-green)}
+.note-name.sharp{color:var(--red);text-shadow:var(--glow-red)}
+.note-name.flat{color:var(--yellow);text-shadow:0 0 10px #ffcc00,0 0 30px rgba(255,204,0,0.3)}
+.note-cents{font-family:var(--font-display);font-size:13px;color:var(--muted);margin-top:4px;letter-spacing:2px}
+.freq-display{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--cyan);text-align:center;text-shadow:var(--glow-cyan);margin:6px 0;letter-spacing:2px}
+.freq-unit{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+.target-display{text-align:center;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+
+/* NEEDLE METER */
+.needle-wrap{position:relative;height:60px;margin:8px 0}
+.needle-track{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--border);border-radius:2px}
+.needle-fill{position:absolute;bottom:0;height:2px;border-radius:2px;transition:left .1s,width .1s,background .1s;background:var(--cyan)}
+.needle-center{position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);width:2px;height:8px;background:rgba(255,255,255,0.2);border-radius:2px}
+.needle{position:absolute;bottom:2px;width:3px;height:40px;border-radius:3px 3px 0 0;transform-origin:bottom center;background:var(--white);transition:left .1s,background .1s;box-shadow:0 0 6px rgba(255,255,255,0.3)}
+.needle.in-tune{background:var(--green);box-shadow:var(--glow-green)}
+.needle.sharp{background:var(--red);box-shadow:var(--glow-red)}
+.needle.flat{background:var(--yellow);box-shadow:0 0 6px #ffcc00}
+.needle-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:4px}
+.tune-status{text-align:center;font-family:var(--font-display);font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:6px;height:16px}
+.tune-status.in-tune{color:var(--green);text-shadow:var(--glow-green)}
+.tune-status.sharp{color:var(--red)}
+.tune-status.flat{color:var(--yellow)}
+
+/* VU METER */
+.vu-wrap{display:flex;gap:3px;align-items:flex-end;height:32px;margin-bottom:8px}
+.vu-bar{flex:1;border-radius:2px 2px 0 0;transition:height .08s,background .1s;background:var(--border);min-height:2px}
+
+/* STRING CARDS */
+.strings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.string-card{background:#0a0e14;border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.string-card.active{border-color:var(--cyan);background:rgba(0,240,255,0.06);box-shadow:var(--glow-cyan),inset 0 0 8px rgba(0,240,255,0.04)}
+.string-card.in-tune{border-color:var(--green);background:rgba(0,255,102,0.06);box-shadow:var(--glow-green)}
+.string-card:hover:not(.active){border-color:var(--border2)}
+.sc-name{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--white)}
+.sc-freq{font-size:9px;color:var(--muted);margin-top:2px;font-family:var(--font-display);letter-spacing:1px}
+.sc-diff{font-size:9px;margin-top:3px;height:12px;font-family:var(--font-display);letter-spacing:1px}
+
+/* CORNERS */
+.corner{position:absolute;width:12px;height:12px}
+.corner-tl{top:6px;left:6px;border-top:1px solid var(--border2);border-left:1px solid var(--border2)}
+.corner-tr{top:6px;right:6px;border-top:1px solid var(--border2);border-right:1px solid var(--border2)}
+.corner-bl{bottom:6px;left:6px;border-bottom:1px solid var(--border2);border-left:1px solid var(--border2)}
+.corner-br{bottom:6px;right:6px;border-bottom:1px solid var(--border2);border-right:1px solid var(--border2)}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <header class="hero">
+    <div class="badge">PRO AUDIO GEAR // STUDIO TUNER v4</div>
+    <h1 class="logo">CAIO TROMBINI <span>AFINADOR</span></h1>
+    <p class="tagline">Toque para armar o microfone</p>
+  </header>
+
+  <!-- Calibration -->
+  <div class="module">
+    <div class="module-label">Calibração A4</div>
+    <div class="cal-row">
+      <span class="cal-label">Frequência de Referência</span>
+      <div class="cal-ctrl">
+        <button id="btnCalDown" onclick="changeA4(-1)">−</button>
+        <span class="cal-val" id="a4Val">440</span>
+        <span class="cal-unit">Hz</span>
+        <button id="btnCalUp" onclick="changeA4(1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instrument -->
+  <div class="module">
+    <div class="module-label">Instrumento</div>
+    <div class="tabs">
+      <button class="tab active" id="tabGuitar" onclick="setInstrument('guitar')">Violão / Guitarra</button>
+      <button class="tab" id="tabUke" onclick="setInstrument('ukulele')">Ukulele</button>
+    </div>
+  </div>
+
+  <!-- Microphone -->
+  <div class="module">
+    <div class="module-label">Input de Áudio</div>
+    <div class="sel-wrap">
+      <select id="micSelect" onchange="selectMic(this.value)">
+        <option value="">Selecione um input para armar...</option>
+      </select>
+    </div>
+    <div class="mic-status">
+      <div class="led" id="micLed"></div>
+      <span class="mic-status-text" id="micStatusText">Aguardando seleção</span>
+    </div>
+  </div>
+
+  <!-- Main Display -->
+  <div class="display-module">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+    
+    <!-- VU Meter -->
+    <div class="vu-wrap" id="vuMeter"></div>
+
+    <!-- Note Name -->
+    <div class="note-display">
+      <div class="note-name" id="noteName">--</div>
+      <div class="note-cents" id="noteCents">-- cents</div>
+    </div>
+
+    <!-- Frequency -->
+    <div class="freq-display" id="freqDisplay">0.00 <span class="freq-unit">Hz</span></div>
+    <div class="target-display" id="targetDisplay">ALVO: --</div>
+
+    <!-- Needle -->
+    <div class="needle-wrap" id="needleWrap">
+      <div class="needle-track"></div>
+      <div class="needle-center"></div>
+      <div class="needle" id="needle" style="left:50%;transform:translateX(-50%)"></div>
+    </div>
+    <div class="needle-labels">
+      <span>♭ FLAT</span>
+      <span>◆ IN TUNE</span>
+      <span>♯ SHARP</span>
+    </div>
+    <div class="tune-status" id="tuneStatus"></div>
+  </div>
+
+  <!-- Strings -->
+  <div class="module">
+    <div class="module-label">Cordas</div>
+    <div class="strings-grid" id="stringsGrid"></div>
+  </div>
+</div>
+
+<script>
+// === DSP CONFIG ===
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const GUITAR_STRINGS=[{n:'E2',f:82.41},{n:'A2',f:110.00},{n:'D3',f:146.83},{n:'G3',f:196.00},{n:'B3',f:246.94},{n:'E4',f:329.63}];
+const UKE_STRINGS=[{n:'G4',f:392.00},{n:'C4',f:261.63},{n:'E4',f:329.63},{n:'A4',f:440.00}];
+
+let a4=440,instrument='guitar',activeStream=null,audioCtx=null,analyser=null,animFrame=null;
+let activeString=null,history=[],lastDisplayFreq=null,holdTimeout=null;
+let strings=GUITAR_STRINGS;
+
+// VU bars init
+const vuMeter=document.getElementById('vuMeter');
+for(let i=0;i<24;i++){const b=document.createElement('div');b.className='vu-bar';vuMeter.appendChild(b);}
+const vuBars=vuMeter.querySelectorAll('.vu-bar');
+
+// Build string cards
+function buildStringCards(){
+  const grid=document.getElementById('stringsGrid');
+  grid.innerHTML='';
+  strings.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='string-card';
+    d.id='sc'+i;
+    d.innerHTML=`<div class="sc-name">${s.n}</div><div class="sc-freq">${s.f.toFixed(2)} Hz</div><div class="sc-diff" id="scd${i}"></div>`;
+    d.onclick=()=>setActiveString(i);
+    grid.appendChild(d);
+  });
+}
+
+function setActiveString(i){
+  document.querySelectorAll('.string-card').forEach(c=>{c.classList.remove('active','in-tune')});
+  document.getElementById('sc'+i)?.classList.add('active');
+  activeString=i;
+  history=[];lastDisplayFreq=null;
+}
+
+function setInstrument(inst){
+  instrument=inst;
+  strings=inst==='guitar'?GUITAR_STRINGS:UKE_STRINGS;
+  document.getElementById('tabGuitar').classList.toggle('active',inst==='guitar');
+  document.getElementById('tabUke').classList.toggle('active',inst==='ukulele');
+  activeString=null;history=[];lastDisplayFreq=null;
+  buildStringCards();resetReading();
+}
+
+function changeA4(d){a4=Math.max(420,Math.min(460,a4+d));document.getElementById('a4Val').textContent=a4;}
+
+function noteFromFreq(f){
+  const semitones=12*Math.log2(f/(a4/16));
+  const idx=Math.round(semitones);
+  const octave=Math.floor((idx+57)/12);
+  const noteIdx=((idx%12)+12)%12;
+  const cents=Math.round((semitones-idx)*100);
+  const targetFreq=a4*Math.pow(2,idx/12)/16;
+  return{name:NOTES[noteIdx]+octave,cents,targetFreq,noteIdx,octave};
+}
+
+function closestStringFor(f){
+  let best=null,bestDiff=Infinity;
+  strings.forEach((s,i)=>{
+    const sc=1200*Math.log2(f/s.f);
+    const diff=Math.abs(sc);
+    if(diff<bestDiff){bestDiff=diff;best={idx:i,absCents:diff,cents:sc};}
+  });
+  return best;
+}
+
+function stabilizeFreq(f,sName){
+  if(!f)return null;
+  if(activeString!==null&&strings[activeString]?.n!==sName){history=[];lastDisplayFreq=null;}
+  history.push(f);
+  if(history.length>11)history.shift();
+  const sorted=[...history].sort((a,b)=>a-b);
+  const med=sorted.length%2?sorted[Math.floor(sorted.length/2)]:(sorted[sorted.length/2-1]+sorted[sorted.length/2])/2;
+  if(!lastDisplayFreq){lastDisplayFreq=med;return med;}
+  lastDisplayFreq=lastDisplayFreq*.66+med*.34;
+  return lastDisplayFreq;
+}
+
+function updateUI(result){
+  if(!result){
+    if(!holdTimeout)holdTimeout=setTimeout(()=>{resetReading();},3000);
+    return;
+  }
+  clearTimeout(holdTimeout);holdTimeout=null;
+  const{freq,cents,noteName,targetFreq,stringIdx}=result;
+  const absC=Math.abs(cents);
+  const inTune=absC<=5;
+  const close=absC<=15;
+
+  document.getElementById('freqDisplay').innerHTML=freq.toFixed(2)+' <span class="freq-unit">Hz</span>';
+  
+  const nn=document.getElementById('noteName');
+  nn.textContent=noteName;
+  nn.className='note-name'+(inTune?' in-tune':cents>0?' sharp':' flat');
+  
+  document.getElementById('noteCents').textContent=(cents>0?'+':'')+cents+' cents';
+  document.getElementById('targetDisplay').textContent='ALVO: '+targetFreq.toFixed(2)+' Hz';
+
+  // Needle
+  const pos=Math.max(0,Math.min(100,50+cents*1.5));
+  const needle=document.getElementById('needle');
+  needle.style.left=pos+'%';
+  needle.style.transform='translateX(-50%)';
+  needle.className='needle'+(inTune?' in-tune':cents>0?' sharp':' flat');
+
+  // Status
+  const ts=document.getElementById('tuneStatus');
+  if(inTune){ts.textContent='◆ IN TUNE';ts.className='tune-status in-tune';}
+  else if(cents>0){ts.textContent='▲ SHARP +'+Math.abs(cents)+'¢';ts.className='tune-status sharp';}
+  else{ts.textContent='▼ FLAT -'+Math.abs(cents)+'¢';ts.className='tune-status flat';}
+
+  // String cards
+  document.querySelectorAll('.string-card').forEach(c=>{c.classList.remove('in-tune');});
+  if(stringIdx!==null){
+    const sc=document.getElementById('sc'+stringIdx);
+    if(sc){
+      sc.classList.add(activeString===stringIdx?'active':'');
+      if(inTune)sc.classList.add('in-tune');
+      document.getElementById('scd'+stringIdx).textContent=(cents>0?'+':'')+cents+'¢';
+      document.getElementById('scd'+stringIdx).style.color=inTune?'var(--green)':close?'var(--yellow)':'var(--red)';
+    }
+    if(activeString===null)setActiveString(stringIdx);
+  }
+}
+
+function resetReading(){
+  document.getElementById('noteName').textContent='--';
+  document.getElementById('noteName').className='note-name';
+  document.getElementById('noteCents').textContent='-- cents';
+  document.getElementById('freqDisplay').innerHTML='0.00 <span class="freq-unit">Hz</span>';
+  document.getElementById('targetDisplay').textContent='ALVO: --';
+  document.getElementById('tuneStatus').textContent='';
+  document.getElementById('tuneStatus').className='tune-status';
+  document.getElementById('needle').style.left='50%';
+  document.getElementById('needle').className='needle';
+  document.querySelectorAll('.sc-diff').forEach(el=>{el.textContent='';});
+}
+
+// === AUDIO DSP ===
+function autoCorrelate(buf,sRate){
+  const SIZE=buf.length;
+  let rms=0;
+  for(let i=0;i<SIZE;i++)rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/SIZE);
+  if(rms<0.005)return-1;
+  let r1=0,r2=SIZE-1;
+  for(let i=0;i<SIZE/2;i++){if(Math.abs(buf[i])<0.2){r1=i;break;}}
+  for(let i=1;i<SIZE/2;i++){if(Math.abs(buf[SIZE-i])<0.2){r2=SIZE-i;break;}}
+  const buf2=buf.slice(r1,r2);
+  const c=new Float32Array(buf2.length);
+  for(let i=0;i<buf2.length;i++){for(let j=0;j<buf2.length-i;j++)c[i]+=buf2[j]*buf2[j+i];}
+  let d=0;while(c[d]>c[d+1])d++;
+  let maxVal=-1,maxPos=-1;
+  for(let i=d;i<buf2.length;i++){if(c[i]>maxVal){maxVal=c[i];maxPos=i;}}
+  let T0=maxPos;
+  const x1=c[T0-1],x2=c[T0],x3=c[T0+1];
+  const a=(x1+x3-2*x2)/2,b=(x3-x1)/2;
+  if(a)T0=-b/(2*a)+T0;
+  return sRate/T0;
+}
+
+function processAudio(){
+  if(!analyser)return;
+  const buf=new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(buf);
+  
+  // VU
+  let rms=0;
+  for(let i=0;i<buf.length;i++)rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/buf.length);
+  const vuBarsArr=Array.from(vuBars);
+  vuBarsArr.forEach((bar,i)=>{
+    const lvl=Math.max(0,Math.min(1,(rms/0.3)-(i/vuBarsArr.length)*0.3));
+    const pct=Math.max(4,lvl*100);
+    bar.style.height=pct+'%';
+    bar.style.background=i<vuBarsArr.length*.6?'var(--green)':i<vuBarsArr.length*.85?'var(--yellow)':'var(--red)';
+    if(lvl>0.01)bar.style.boxShadow=i<vuBarsArr.length*.6?'0 0 4px rgba(0,255,102,0.5)':'0 0 4px rgba(255,204,0,0.5)';
+    else bar.style.boxShadow='none';
+  });
+
+  const f=autoCorrelate(buf,audioCtx.sampleRate);
+  if(f>60&&f<1200){
+    const closest=closestStringFor(f);
+    const stable=stabilizeFreq(f,strings[closest.idx]?.n);
+    if(stable>0){
+      const noteInfo=noteFromFreq(stable);
+      updateUI({freq:stable,cents:noteInfo.cents,noteName:noteInfo.name,targetFreq:noteInfo.targetFreq,stringIdx:closest.idx});
+    }
+  }
+  animFrame=requestAnimationFrame(processAudio);
+}
+
+// === MIC ===
+async function refreshMicrophones(){
+  const sel=document.getElementById('micSelect');
+  sel.innerHTML='<option value="">Selecione um input para armar...</option>';
+  try{
+    const devices=await navigator.mediaDevices.enumerateDevices();
+    devices.filter(d=>d.kind==='audioinput').forEach((d,i)=>{
+      const opt=document.createElement('option');
+      opt.value=d.deviceId;
+      opt.textContent=d.label||'Microfone '+(i+1);
+      sel.appendChild(opt);
+    });
+  }catch(e){}
+}
+
+async function selectMic(deviceId){
+  if(animFrame){cancelAnimationFrame(animFrame);animFrame=null;}
+  if(activeStream){activeStream.getTracks().forEach(t=>t.stop());activeStream=null;}
+  if(audioCtx){await audioCtx.close();audioCtx=null;analyser=null;}
+  
+  const led=document.getElementById('micLed');
+  const statusTxt=document.getElementById('micStatusText');
+  resetReading();
+
+  if(!deviceId){
+    led.className='led';
+    statusTxt.textContent='Aguardando seleção';
+    return;
+  }
+
+  led.className='led';
+  statusTxt.textContent='Conectando...';
+
+  try{
+    const constraints={audio:{deviceId:{exact:deviceId},echoCancellation:false,noiseSuppression:false,autoGainControl:false}};
+    activeStream=await navigator.mediaDevices.getUserMedia(constraints);
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=2048;
+    analyser.smoothingTimeConstant=0.3;
+    const source=audioCtx.createMediaStreamSource(activeStream);
+    source.connect(analyser);
+    led.className='led active';
+    statusTxt.textContent='Microfone armado';
+    await refreshMicrophones();
+    processAudio();
+  }catch(e){
+    led.className='led error';
+    statusTxt.textContent='Erro: '+e.message.substring(0,40);
+  }
+}
+
+// INIT
+buildStringCards();
+refreshMicrophones();
+if(navigator.mediaDevices?.addEventListener)navigator.mediaDevices.addEventListener('devicechange',refreshMicrophones);
+</script>
+</body>
+</html>
