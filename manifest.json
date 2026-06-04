@@ -1,0 +1,27 @@
+{
+  "name": "Caio Trombini Afinador PRO",
+  "short_name": "Afinador PRO",
+  "description": "Afinador profissional para violão, guitarra e ukulele",
+  "start_url": "/afinador/",
+  "scope": "/afinador/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#060709",
+  "theme_color": "#060709",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/caiotrombini/afinador/main/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/caiotrombini/afinador/main/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": [
+    "music",
+    "utilities"
+  ]
+}
