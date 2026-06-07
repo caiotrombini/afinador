@@ -308,7 +308,7 @@ async function selectMic(deviceId){
     activeStream=await navigator.mediaDevices.getUserMedia(constraints);
     audioCtx=new(window.AudioContext||window.webkitAudioContext)();
     analyser=audioCtx.createAnalyser();
-    analyser.fftSize=2048;analyser.smoothingTimeConstant=0.3;
+    analyser.fftSize=4096;analyser.smoothingTimeConstant=0;
     const source=audioCtx.createMediaStreamSource(activeStream);
     source.connect(analyser);
     led.className='led active';
@@ -354,11 +354,18 @@ function closestString(f){
   return best;
 }
 function stabilize(f){
-  history.push(f);if(history.length>11)history.shift();
+  history.push(f);if(history.length>13)history.shift();
+  // Reject outliers > 80 cents from raw median
   const sorted=[...history].sort((a,b)=>a-b);
-  const med=sorted.length%2?sorted[Math.floor(sorted.length/2)]:(sorted[sorted.length/2-1]+sorted[sorted.length/2])/2;
+  const rawMed=sorted[Math.floor(sorted.length/2)];
+  const filtered=history.filter(h=>Math.abs(1200*Math.log2(h/rawMed))<80);
+  const usable=filtered.length>=3?filtered:history;
+  const fs=[...usable].sort((a,b)=>a-b);
+  const med=fs.length%2?fs[Math.floor(fs.length/2)]:(fs[fs.length/2-1]+fs[fs.length/2])/2;
   if(!lastDisplayFreq){lastDisplayFreq=med;return med;}
-  lastDisplayFreq=lastDisplayFreq*.66+med*.34;return lastDisplayFreq;
+  const jumpCents=Math.abs(1200*Math.log2(med/lastDisplayFreq));
+  const alpha=jumpCents>80?0.55:jumpCents>25?0.40:0.28;
+  lastDisplayFreq=lastDisplayFreq*(1-alpha)+med*alpha;return lastDisplayFreq;
 }
 function updateUI(r){
   if(!r){if(!holdTimeout)holdTimeout=setTimeout(resetReading,3000);return;}
@@ -392,21 +399,53 @@ function resetReading(){
   document.getElementById('needle').style.left='50%';document.getElementById('needle').className='needle';
   document.querySelectorAll('.sc-diff').forEach(el=>{el.textContent='';});
 }
-function autoCorrelate(buf,sRate){
+function detectPitch(buf,sRate){
   const SIZE=buf.length;let rms=0;
   for(let i=0;i<SIZE;i++)rms+=buf[i]*buf[i];rms=Math.sqrt(rms/SIZE);
-  if(rms<0.005)return-1;
-  let r1=0,r2=SIZE-1;
-  for(let i=0;i<SIZE/2;i++){if(Math.abs(buf[i])<0.2){r1=i;break;}}
-  for(let i=1;i<SIZE/2;i++){if(Math.abs(buf[SIZE-i])<0.2){r2=SIZE-i;break;}}
-  const buf2=buf.slice(r1,r2);const c=new Float32Array(buf2.length);
-  for(let i=0;i<buf2.length;i++)for(let j=0;j<buf2.length-i;j++)c[i]+=buf2[j]*buf2[j+i];
-  let d=0;while(c[d]>c[d+1])d++;
-  let maxVal=-1,maxPos=-1;
-  for(let i=d;i<buf2.length;i++){if(c[i]>maxVal){maxVal=c[i];maxPos=i;}}
-  let T0=maxPos;const x1=c[T0-1],x2=c[T0],x3=c[T0+1];
-  const aa=(x1+x3-2*x2)/2,bb=(x3-x1)/2;
-  if(aa)T0=-bb/(2*aa)+T0;return sRate/T0;
+  if(rms<0.008)return-1;
+  // Downsample to ~12kHz for better low-note resolution
+  const ds=sRate>30000?Math.max(2,Math.round(sRate/12000)):1;
+  const newLen=Math.floor(SIZE/ds);if(newLen<256)return-1;
+  const s=new Float32Array(newLen);let mean=0;
+  for(let i=0;i<newLen;i++){let acc=0;const st=i*ds;for(let j=0;j<ds;j++)acc+=buf[st+j]||0;s[i]=acc/ds;mean+=s[i];}
+  mean/=newLen;for(let i=0;i<newLen;i++)s[i]-=mean;
+  const sr=sRate/ds;
+  const minLag=Math.max(2,Math.floor(sr/650));
+  const maxLag=Math.min(newLen-2,Math.ceil(sr/60));
+  if(maxLag<=minLag)return-1;
+  // NSDF (Normalized Square Difference Function / MPM algorithm)
+  const nsdf=new Float32Array(maxLag+2);
+  for(let tau=minLag;tau<=maxLag;tau++){
+    let ac=0,m=0;const lim=newLen-tau;
+    for(let i=0;i<lim;i++){const a=s[i],b=s[i+tau];ac+=a*b;m+=a*a+b*b;}
+    nsdf[tau]=m>0?(2*ac/m):0;
+  }
+  // Collect peaks with confidence >= 0.50
+  const peaks=[];
+  for(let tau=minLag+1;tau<maxLag;tau++){
+    if(nsdf[tau]>nsdf[tau-1]&&nsdf[tau]>=nsdf[tau+1]&&nsdf[tau]>0.50)peaks.push({tau,value:nsdf[tau]});
+  }
+  if(!peaks.length)return-1;
+  let highest=peaks[0].value;for(const p of peaks)if(p.value>highest)highest=p.value;
+  const threshold=Math.max(0.62,highest*0.88);
+  let sel=peaks.find(p=>p.value>=threshold)||peaks.reduce((a,b)=>a.value>b.value?a:b);
+  // Parabolic interpolation for sub-sample accuracy
+  const y0=nsdf[sel.tau-1]||sel.value,y1=nsdf[sel.tau],y2=nsdf[sel.tau+1]||sel.value;
+  const denom=y0-2*y1+y2;let tau=sel.tau;
+  if(Math.abs(denom)>1e-9){const sh=0.5*(y0-y2)/denom;if(Math.abs(sh)<=1)tau=sel.tau+sh;}
+  const freq=sr/tau;
+  return(Number.isFinite(freq)&&freq>=60&&freq<=650)?freq:-1;
+}
+function correctHarmonic(freq){
+  const orig=closestString(freq);
+  if(Math.abs(orig.cents)<=100)return freq;
+  let bestFreq=freq,bestScore=Math.abs(orig.cents);
+  for(const f of[freq/2,freq*2,freq/3]){
+    if(f<58||f>660)continue;
+    const c=closestString(f);
+    if(Math.abs(c.cents)<bestScore-80){bestScore=Math.abs(c.cents);bestFreq=f;}
+  }
+  return bestFreq;
 }
 function processAudio(){
   if(!analyser)return;
@@ -418,8 +457,9 @@ function processAudio(){
     bar.style.background=i<vuBars.length*.6?'var(--green)':i<vuBars.length*.85?'var(--yellow)':'var(--red)';
     bar.style.boxShadow=lvl>0.01?(i<vuBars.length*.6?'0 0 4px rgba(0,255,102,0.5)':'0 0 4px rgba(255,204,0,0.5)'):'none';
   });
-  const f=autoCorrelate(buf,audioCtx.sampleRate);
-  if(f>60&&f<1200){
+  const raw=detectPitch(buf,audioCtx.sampleRate);
+  if(raw>0){
+    const f=correctHarmonic(raw);
     const cl=closestString(f);const stable=stabilize(f);
     if(stable>0){const ni=noteFromFreq(stable);updateUI({freq:stable,cents:ni.cents,noteName:ni.name,targetFreq:ni.targetFreq,stringIdx:cl.idx});}
   }
