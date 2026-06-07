@@ -424,9 +424,10 @@ function setInstrument(inst){
 }
 function changeA4(d){a4=Math.max(420,Math.min(460,a4+d));document.getElementById('a4Val').textContent=a4;}
 function noteFromFreq(f){
-  const s=12*Math.log2(f/(a4/16));const idx=Math.round(s);
-  const octave=Math.floor((idx+57)/12);const ni=((idx%12)+12)%12;
-  const cents=Math.round((s-idx)*100);const tf=a4*Math.pow(2,idx/12)/16;
+  // n = número MIDI (A4=440 → 69). idx 60 = C4, 69 = A4.
+  const n=69+12*Math.log2(f/a4);const idx=Math.round(n);
+  const ni=((idx%12)+12)%12;const octave=Math.floor(idx/12)-1;
+  const cents=Math.round((n-idx)*100);const tf=a4*Math.pow(2,(idx-69)/12);
   return{name:NOTES[ni]+octave,cents,targetFreq:tf};
 }
 function closestString(f){
@@ -556,8 +557,8 @@ function processAudio(){
     if(stable>0){
       const tgt=strings[targetIdx];
       const cents=Math.round(1200*Math.log2(stable/tgt.f)); // cents relativos à corda alvo
-      const ni=noteFromFreq(stable);
-      updateUI({freq:stable,cents,noteName:ni.name,targetName:tgt.n,targetFreq:tgt.f,stringIdx:targetIdx});
+      // Nota exibida = nota da corda alvo (consistente com ALVO e com o card destacado)
+      updateUI({freq:stable,cents,noteName:tgt.n,targetName:tgt.n,targetFreq:tgt.f,stringIdx:targetIdx});
     }
   }
   animFrame=requestAnimationFrame(processAudio);
