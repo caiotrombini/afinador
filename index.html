@@ -132,6 +132,27 @@ option{background:#0d1117;color:var(--white)}
 .corner-tr{top:6px;right:6px;border-top:1px solid var(--border2);border-right:1px solid var(--border2)}
 .corner-bl{bottom:6px;left:6px;border-bottom:1px solid var(--border2);border-left:1px solid var(--border2)}
 .corner-br{bottom:6px;right:6px;border-bottom:1px solid var(--border2);border-right:1px solid var(--border2)}
+
+/* GUIA */
+.guide details{width:100%}
+.guide summary{font-size:9px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:8px;list-style:none;user-select:none}
+.guide summary::-webkit-details-marker{display:none}
+.guide summary::after{content:'▶';font-size:8px;margin-left:auto;transition:transform .2s;color:var(--muted)}
+.guide details[open] summary::after{transform:rotate(90deg)}
+.guide-body{padding-top:12px;display:flex;flex-direction:column;gap:14px}
+.guide-sec{}
+.guide-sec-title{font-size:9px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.guide-sec-title::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--cyan);flex-shrink:0}
+.guide-text{font-size:11px;color:var(--muted);line-height:1.7}
+.guide-text strong{color:var(--white)}
+.guide-table{width:100%;border-collapse:collapse;margin-top:6px}
+.guide-table th{font-size:9px;letter-spacing:1px;color:var(--cyan);font-family:var(--font-display);padding:5px 8px;text-align:left;border-bottom:1px solid var(--border2)}
+.guide-table td{font-size:10px;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--border)}
+.guide-table td:first-child{color:var(--white)}
+.guide-table td:last-child{font-family:var(--font-display);color:var(--cyan)}
+.guide-cents{display:grid;grid-template-columns:56px 1fr;gap:5px 10px;margin-top:8px}
+.guide-cents span:nth-child(odd){font-family:var(--font-display);font-size:11px}
+.guide-cents span:nth-child(even){font-size:10px;color:var(--muted);align-self:center}
 </style>
 </head>
 <body>
@@ -217,6 +238,55 @@ option{background:#0d1117;color:var(--white)}
     <div class="module-label">Cordas</div>
     <div class="strings-grid" id="stringsGrid"></div>
   </div>
+
+  <!-- Guia de Frequências -->
+  <div class="module guide">
+    <details>
+      <summary>Guia de Frequências e Afinação</summary>
+      <div class="guide-body">
+
+        <div class="guide-sec">
+          <div class="guide-sec-title">O que é Hz (Hertz)?</div>
+          <div class="guide-text">Hz mede quantas vezes por segundo a corda vibra. Quanto mais rápida a vibração, mais <strong>aguda</strong> a nota. A corda A2 vibra <strong>110 vezes por segundo</strong>; a E4 vibra <strong>330 vezes por segundo</strong>.</div>
+        </div>
+
+        <div class="guide-sec">
+          <div class="guide-sec-title">Cordas — Afinação Padrão (A4 = 440 Hz)</div>
+          <table class="guide-table">
+            <thead><tr><th>Corda</th><th>Nota</th><th>Frequência</th></tr></thead>
+            <tbody>
+              <tr><td>6ª (mais grave)</td><td>E2</td><td>82.41 Hz</td></tr>
+              <tr><td>5ª</td><td>A2</td><td>110.00 Hz</td></tr>
+              <tr><td>4ª</td><td>D3</td><td>146.83 Hz</td></tr>
+              <tr><td>3ª</td><td>G3</td><td>196.00 Hz</td></tr>
+              <tr><td>2ª</td><td>B3</td><td>246.94 Hz</td></tr>
+              <tr><td>1ª (mais aguda)</td><td>E4</td><td>329.63 Hz</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="guide-sec">
+          <div class="guide-sec-title">O que são Cents?</div>
+          <div class="guide-text">Cents medem o desvio de afinação. <strong>100 cents = 1 semitom.</strong> O ponteiro mostra o quanto você está fora do alvo.</div>
+          <div class="guide-cents">
+            <span style="color:var(--green)">0 ¢</span><span>Afinação perfeita — não mexa</span>
+            <span style="color:var(--red)">+50 ¢</span><span>Meio tom acima (SHARP) — afrouxe a corda</span>
+            <span style="color:var(--yellow)">−50 ¢</span><span>Meio tom abaixo (FLAT) — aperte a corda</span>
+          </div>
+        </div>
+
+        <div class="guide-sec">
+          <div class="guide-sec-title">Calibração A4</div>
+          <div class="guide-text">
+            <strong>440 Hz</strong> — padrão internacional (ISO 16)<br>
+            <strong>432 Hz</strong> — afinação alternativa / histórica<br>
+            <strong>442–444 Hz</strong> — padrão de orquestra e concerto
+          </div>
+        </div>
+
+      </div>
+    </details>
+  </div>
 </div>
 
 <script>
@@ -226,6 +296,7 @@ const UKE=[{n:'G4',f:392.00},{n:'C4',f:261.63},{n:'E4',f:329.63},{n:'A4',f:440.0
 
 let a4=440,instrument='guitar',activeStream=null,audioCtx=null,analyser=null,animFrame=null;
 let activeString=null,history=[],lastDisplayFreq=null,holdTimeout=null,strings=GUITAR;
+let detectedStringIdx=null,pendingStringIdx=null,pendingCount=0;
 let deferredPrompt=null;
 
 // VU bars
@@ -280,11 +351,11 @@ async function armMic(){
     document.getElementById('selWrap').style.display='block';
     btn.style.display='none';
     led.className='led active';
-    statusTxt.textContent='Permissão concedida — selecione o microfone';
-    // Se só tem 1 mic, seleciona automaticamente
-    if(mics.length===1&&mics[0].deviceId){
-      sel.value=mics[0].deviceId;
-      selectMic(mics[0].deviceId);
+    statusTxt.textContent='Conectando microfone padrão...';
+    // Auto-inicia com o microfone padrão (prefere o "default", senão usa o primeiro)
+    if(mics.length>0){
+      const def=mics.find(m=>m.deviceId==='default')||mics[0];
+      if(def.deviceId){sel.value=def.deviceId;selectMic(def.deviceId);}
     }
   }catch(e){
     btn.textContent='🎙 ARMAR MICROFONE';
@@ -333,7 +404,7 @@ function buildStringCards(){
 function setActiveString(i){
   document.querySelectorAll('.string-card').forEach(c=>c.classList.remove('active','in-tune'));
   document.getElementById('sc'+i)?.classList.add('active');
-  activeString=i;history=[];lastDisplayFreq=null;
+  activeString=i;detectedStringIdx=i;pendingStringIdx=null;pendingCount=0;history=[];lastDisplayFreq=null;
 }
 function setInstrument(inst){
   instrument=inst;strings=inst==='guitar'?GUITAR:UKE;
@@ -353,9 +424,16 @@ function closestString(f){
   strings.forEach((s,i)=>{const sc=1200*Math.log2(f/s.f);if(Math.abs(sc)<bestD){bestD=Math.abs(sc);best={idx:i,cents:sc};}});
   return best;
 }
-function stabilize(f){
+function stabilize(f,idx){
+  // Debounced string-change: require 3 consecutive frames before resetting history
+  if(idx!==detectedStringIdx){
+    if(idx===pendingStringIdx){
+      pendingCount++;
+      if(pendingCount>=3){detectedStringIdx=idx;pendingStringIdx=null;pendingCount=0;history=[];lastDisplayFreq=null;}
+    }else{pendingStringIdx=idx;pendingCount=1;}
+  }else{pendingStringIdx=null;pendingCount=0;}
   history.push(f);if(history.length>13)history.shift();
-  // Reject outliers > 80 cents from raw median
+  // Outlier rejection within current string (±80 cents from median)
   const sorted=[...history].sort((a,b)=>a-b);
   const rawMed=sorted[Math.floor(sorted.length/2)];
   const filtered=history.filter(h=>Math.abs(1200*Math.log2(h/rawMed))<80);
@@ -460,7 +538,7 @@ function processAudio(){
   const raw=detectPitch(buf,audioCtx.sampleRate);
   if(raw>0){
     const f=correctHarmonic(raw);
-    const cl=closestString(f);const stable=stabilize(f);
+    const cl=closestString(f);const stable=stabilize(f,cl.idx);
     if(stable>0){const ni=noteFromFreq(stable);updateUI({freq:stable,cents:ni.cents,noteName:ni.name,targetFreq:ni.targetFreq,stringIdx:cl.idx});}
   }
   animFrame=requestAnimationFrame(processAudio);
